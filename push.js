@@ -5,24 +5,13 @@ var AWS = require('aws-sdk');
 var modes = require('js-git/lib/modes');
 
 var asyncDb = require('./async-db');
+var async = require('./async');
 
 var conf = require('./conf.json');
 
 AWS.config.update({ region : 'eu-west-1' });
 if (process.env.DEBUG) {
   AWS.config.update({ logger : process.stdout });
-}
-
-function async(cont) {
-  return new Promise((resolve, reject) => {
-    cont((err, res) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(res);
-      }
-    });
-  });
 }
 
 require('./s3-db')(AWS, conf.bucket, conf.key)
