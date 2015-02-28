@@ -4,6 +4,8 @@
 var AWS = require('aws-sdk');
 var modes = require('js-git/lib/modes');
 
+var asyncDb = require('./async-db');
+
 var conf = require('./conf.json');
 
 AWS.config.update({ region : 'eu-west-1' });
@@ -24,6 +26,7 @@ function async(cont) {
 }
 
 require('./s3-db')(AWS, conf.bucket, conf.key)
+  .then(repo => asyncDb(repo))
   .then(repo => {
     return async(repo.saveAs('blob', new Buffer('Hello, world!', 'utf-8')))
       .then(blobHash => {

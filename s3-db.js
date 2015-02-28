@@ -59,9 +59,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function saveAs(type, body, callback) {
-    if (!callback) {
-      return saveAs.bind(null, type, body);
-    }
     try {
       var raw = codec.frame({ type : type, body : codec.encoders[type](body) });
       var hash = sha1(raw);
@@ -78,9 +75,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function loadAs(type, hash, callback) {
-    if (!callback) {
-      return loadAs.bind(null, type, hash);
-    }
     loadRaw(hash, function (err, raw) {
       if (raw === undefined) {
         callback(err);
@@ -100,9 +94,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function saveRaw(hash, raw, callback) {
-    if (!callback) {
-      return saveRaw.bind(null, hash, raw);
-    }
     s3.headObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
       if (err && err.code === 'NotFound') {
         s3.upload({ Bucket : bucket, Key : encryptString(hash), Body : encryptBuffer(raw) }, (err, data) => {
@@ -121,9 +112,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function loadRaw(hash, callback) {
-    if (!callback) {
-      return loadRaw.bind(null, hash);
-    }
     s3.getObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
       if (err && err.code === 'NoSuchKey') {
         callback();
@@ -136,9 +124,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function readRef(ref, callback) {
-    if (!callback) {
-      return readRef.bind(null, ref);
-    }
     s3.getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) }, (err, data) => {
       if (err && err.code === 'NoSuchKey') {
         callback();
@@ -151,9 +136,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function updateRef(ref, hash, callback) {
-    if (!callback) {
-      return updateRef.bind(null, ref, hash);
-    }
     s3.putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) }, function(err, data) {
       if (err) {
         callback(err);
