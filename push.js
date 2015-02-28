@@ -23,7 +23,7 @@ function async(cont) {
   });
 }
 
-require('./s3-db')({}, AWS, conf.bucket, conf.key)
+require('./s3-db')(AWS, conf.bucket, conf.key)
   .then(repo => {
     return async(repo.saveAs('blob', new Buffer('Hello, world!', 'utf-8')))
       .then(blobHash => {

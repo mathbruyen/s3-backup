@@ -26,7 +26,7 @@ function ensureBucket(s3, bucket) {
   });
 }
 
-module.exports = (platform, AWS, bucket, key) => {
+module.exports = (AWS, bucket, key) => {
 
   var s3 = new AWS.S3({ apiVersion : '2006-03-01' });
 
@@ -58,122 +58,113 @@ module.exports = (platform, AWS, bucket, key) => {
     return Buffer.concat([head, tail]);
   }
 
-  return ensureBucket(s3, bucket).then(() => {
-
-    function saveAs(type, body, callback) {
-      if (!callback) {
-        return saveAs.bind(null, type, body);
-      }
-      try {
-        var raw = codec.frame({ type : type, body : codec.encoders[type](body) });
-        var hash = sha1(raw);
-        saveRaw(hash, raw, (err) => {
-          if (err) {
-            callback(err);
-          } else {
-            callback(null, hash);
-          }
-        });
-      } catch (err) {
-        callback(err);
-      }
+  function saveAs(type, body, callback) {
+    if (!callback) {
+      return saveAs.bind(null, type, body);
     }
-
-    function loadAs(type, hash, callback) {
-      if (!callback) {
-        return loadAs.bind(null, type, hash);
-      }
-      loadRaw(hash, function (err, raw) {
-        if (raw === undefined) {
-          callback(err);
-        } else {
-          try {
-            var deframed = codec.deframe(raw);
-            if (deframed.type !== type) {
-              throw new TypeError('Type mismatch, expected ' + type + ' but found ' + type);
-            }
-            var body = codec.decoders[deframed.type](deframed.body);
-            callback(null, body);
-          } catch (err) {
-            callback(err);
-          }
-        }
-      });
-    }
-
-    function saveRaw(hash, raw, callback) {
-      if (!callback) {
-        return saveRaw.bind(null, hash, raw);
-      }
-      s3.headObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
-        if (err && err.code === 'NotFound') {
-          s3.upload({ Bucket : bucket, Key : encryptString(hash), Body : encryptBuffer(raw) }, (err, data) => {
-            if (err) {
-              callback(err);
-            } else {
-              callback();
-            }
-          });
-        } else if (err) {
-          callback(err);
-        } else {
-          callback();
-        }
-      });
-    }
-
-    function loadRaw(hash, callback) {
-      if (!callback) {
-        return loadRaw.bind(null, hash);
-      }
-      s3.getObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
-        if (err && err.code === 'NoSuchKey') {
-          callback();
-        } else if (err) {
-          callback(err);
-        } else {
-          callback(decryptBuffer(data.Body));
-        }
-      });
-    }
-
-    function readRef(ref, callback) {
-      if (!callback) {
-        return readRef.bind(null, ref);
-      }
-      s3.getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) }, (err, data) => {
-        if (err && err.code === 'NoSuchKey') {
-          callback();
-        } else if (err) {
-          callback(err);
-        } else {
-          callback(decryptString(data.Body.toString('utf-8')));
-        }
-      });
-    }
-
-    function updateRef(ref, hash, callback) {
-      if (!callback) {
-        return updateRef.bind(null, ref, hash);
-      }
-      s3.putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) }, function(err, data) {
+    try {
+      var raw = codec.frame({ type : type, body : codec.encoders[type](body) });
+      var hash = sha1(raw);
+      saveRaw(hash, raw, (err) => {
         if (err) {
           callback(err);
         } else {
-          callback();
+          callback(null, hash);
         }
       });
+    } catch (err) {
+      callback(err);
     }
+  }
 
-    platform.saveAs = saveAs;
-    platform.loadAs = loadAs;
-    platform.saveRaw = saveRaw;
-    platform.loadRaw = loadRaw;
-    platform.readRef = readRef;
-    platform.updateRef = updateRef;
+  function loadAs(type, hash, callback) {
+    if (!callback) {
+      return loadAs.bind(null, type, hash);
+    }
+    loadRaw(hash, function (err, raw) {
+      if (raw === undefined) {
+        callback(err);
+      } else {
+        try {
+          var deframed = codec.deframe(raw);
+          if (deframed.type !== type) {
+            throw new TypeError('Type mismatch, expected ' + type + ' but found ' + type);
+          }
+          var body = codec.decoders[deframed.type](deframed.body);
+          callback(null, body);
+        } catch (err) {
+          callback(err);
+        }
+      }
+    });
+  }
 
+  function saveRaw(hash, raw, callback) {
+    if (!callback) {
+      return saveRaw.bind(null, hash, raw);
+    }
+    s3.headObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
+      if (err && err.code === 'NotFound') {
+        s3.upload({ Bucket : bucket, Key : encryptString(hash), Body : encryptBuffer(raw) }, (err, data) => {
+          if (err) {
+            callback(err);
+          } else {
+            callback();
+          }
+        });
+      } else if (err) {
+        callback(err);
+      } else {
+        callback();
+      }
+    });
+  }
+
+  function loadRaw(hash, callback) {
+    if (!callback) {
+      return loadRaw.bind(null, hash);
+    }
+    s3.getObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
+      if (err && err.code === 'NoSuchKey') {
+        callback();
+      } else if (err) {
+        callback(err);
+      } else {
+        callback(decryptBuffer(data.Body));
+      }
+    });
+  }
+
+  function readRef(ref, callback) {
+    if (!callback) {
+      return readRef.bind(null, ref);
+    }
+    s3.getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) }, (err, data) => {
+      if (err && err.code === 'NoSuchKey') {
+        callback();
+      } else if (err) {
+        callback(err);
+      } else {
+        callback(decryptString(data.Body.toString('utf-8')));
+      }
+    });
+  }
+
+  function updateRef(ref, hash, callback) {
+    if (!callback) {
+      return updateRef.bind(null, ref, hash);
+    }
+    s3.putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) }, function(err, data) {
+      if (err) {
+        callback(err);
+      } else {
+        callback();
+      }
+    });
+  }
+
+  return ensureBucket(s3, bucket).then(() => {
+    return { saveAs, loadAs, saveRaw, loadRaw, readRef, updateRef };
     // TODO hasHash? listRefs?
-
-    return platform;
   });
 };
