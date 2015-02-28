@@ -1,0 +1,17 @@
+{
+  "name": "backup",
+  "private" : true,
+  "version": "0.0.1",
+  "description": "Encrypted backup on S3",
+  "scripts": {
+    "push": "babel-node push.js"
+  },
+  "author": "Mathieu Bruyen <code@mais-h.eu>",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.1.14",
+    "babel": "^4.6.1",
+    "git-sha1": "^0.1.2",
+    "js-git": "^0.7.7"
+  }
+}
