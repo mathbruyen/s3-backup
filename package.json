@@ -9,7 +9,7 @@
   "author": "Mathieu Bruyen <code@mais-h.eu>",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.1.14",
+    "aws-sdk": "^2.1.16",
     "babel": "^4.6.1",
     "git-sha1": "^0.1.2",
     "js-git": "^0.7.7"
