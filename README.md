@@ -10,6 +10,7 @@ Copy `conf.json.example` to `conf.json` and fill values:
 
 * `bucket`: bucket name on S3
 * `key`: encryption key, can be generated using `openssl rand -hex 32`
+* `cache`: folder in which to store structure (commits and trees)
 
 Run `npm install` and `npm run-script push`.
 
