@@ -1,6 +1,6 @@
 {
   "name": "backup",
-  "private" : true,
+  "private": true,
   "version": "0.0.1",
   "description": "Encrypted backup on S3",
   "scripts": {
@@ -12,6 +12,7 @@
     "aws-sdk": "^2.1.14",
     "babel": "^4.6.1",
     "git-sha1": "^0.1.2",
-    "js-git": "^0.7.7"
+    "js-git": "^0.7.7",
+    "mkdirp": "^0.5.0"
   }
 }

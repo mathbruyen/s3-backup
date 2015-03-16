@@ -1,4 +1,5 @@
 {
   "bucket" : "s3 bucket name",
-  "key" : "encryption key"
+  "key" : "encryption key",
+  "cache" : "/tmp/backup.git"
 }

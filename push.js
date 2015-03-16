@@ -4,8 +4,10 @@
 var AWS = require('aws-sdk');
 var modes = require('js-git/lib/modes');
 
-var asyncDb = require('./async-db');
 var async = require('./async');
+var s3db = require('./s3-db');
+var fsdb = require('./fs-db');
+var cachedb = require('./cache-db');
 
 var conf = require('./conf.json');
 
@@ -14,8 +16,16 @@ if (process.env.DEBUG) {
   AWS.config.update({ logger : process.stdout });
 }
 
-require('./s3-db')(AWS, conf.bucket, conf.key)
-  .then(repo => asyncDb(repo))
+s3db(AWS, conf.bucket, conf.key)
+  .then(s3repo => {
+    var fsrepo = fsdb(conf.cache);
+    var routing = {
+      blob : [s3repo],
+      tree : [fsrepo, s3repo],
+      commit : [fsrepo, s3repo]
+    };
+    return cachedb(routing, s3repo);
+  })
   .then(repo => {
     return async(repo.saveAs('blob', new Buffer('Hello, world!', 'utf-8')))
       .then(blobHash => {
@@ -35,4 +45,4 @@ require('./s3-db')(AWS, conf.bucket, conf.key)
       .then(commitHash => {
         return async(repo.updateRef('test', commitHash));
       });
-  }).then(console.log.bind(console, 'Finished'), err => console.error(console, 'Failed', err.stack));
+  }).then(console.log.bind(console, 'Finished'), err => console.error('Failed', err.stack));
