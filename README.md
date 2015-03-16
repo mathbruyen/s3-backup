@@ -1,6 +1,6 @@
-# Using Amazon S3 as a git object store
+# Minimal backup using Amazon S3
 
-Prototype to use S3 as the object store for a git repository, encrypting objects before sending them to the store. I plan to use it as a minimal backup tool rather than a general purpose store, thus client side encryption and test script currently in the repository.
+Map local folders to a remote S3 bucket as git objects stored. Objects are stored encrypted, but I'm not a cryptographer and this may not be secure for storing your files: I want to play with code more than making a commercial product.
 
 ## Running
 
@@ -10,9 +10,10 @@ Copy `conf.json.example` to `conf.json` and fill values:
 
 * `bucket`: bucket name on S3
 * `key`: encryption key, can be generated using `openssl rand -hex 32`
-* `cache`: folder in which to store structure (commits and trees)
+* `cache`: local folder in which to cache structure (commits and trees)
+* `folders`: folders to map on S3 as an object, keys are identifiers to be shared among synchronized computers and values are local folders to synchronize
 
-Run `npm install` and `npm run-script push`.
+Run `npm install` and `npm run push`.
 
 ## Docs
 

@@ -1,5 +1,8 @@
 {
   "bucket" : "s3 bucket name",
   "key" : "encryption key",
-  "cache" : "/tmp/backup.git"
+  "cache" : "/tmp/backup.git",
+  "folders" : {
+    "home" : "/home/myself/Documents"
+  }
 }
