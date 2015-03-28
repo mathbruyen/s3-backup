@@ -8,7 +8,7 @@ var path = require('path');
 module.exports = (root) => {
 
   function getFile(hash) {
-    return path.join(root, hash.substring(0, 2), hash.substring(2, 4), hash.substring(4));
+    return path.join(root, hash.substring(0, 2), hash.substring(2));
   }
 
   function saveRaw(hash, raw, callback) {
