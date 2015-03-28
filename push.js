@@ -96,12 +96,7 @@ function uploadFileOrFolder(repo, folder, file) {
 s3db(AWS, conf.bucket, conf.key)
   .then(s3repo => {
     var fsrepo = fsdb(conf.cache);
-    var routing = {
-      blob : [s3repo],
-      tree : [fsrepo, s3repo],
-      commit : [fsrepo, s3repo]
-    };
-    return cachedb(routing, s3repo);
+    return cachedb(fsrepo, s3repo, ['tree', 'commit']);
   })
   .then(repo => {
     return Promise.all(Object.keys(conf.folders).map(ref => {
