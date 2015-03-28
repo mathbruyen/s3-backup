@@ -4,6 +4,8 @@
 var async = require('./async');
 var sha1 = require('git-sha1');
 var codec = require('js-git/lib/object-codec');
+var inflate = require('js-git/lib/inflate');
+var deflate = require('js-git/lib/deflate');
 
 module.exports = (cache, central, types) => {
 
@@ -17,7 +19,10 @@ module.exports = (cache, central, types) => {
     }
 
     try {
-      var raw = codec.frame({ type : type, body : codec.encoders[type](body) });
+      var raw = deflate(codec.frame({
+        type : type,
+        body : codec.encoders[type](body)
+      }));
       var hash = sha1(raw);
 
       var promises = [async(central.saveRaw(hash, raw))];
@@ -40,11 +45,11 @@ module.exports = (cache, central, types) => {
         if (err) {
           callback(err);
         } else if (raw) {
-          callback(null, raw);
+          callback(null, inflate(raw));
         } else {
           central.loadRaw(hash, (err, raw) => {
             cache.saveRaw(hash, raw, (err) => {
-              callback(err, raw);
+              callback(err, inflate(raw));
             });
           });
         }
