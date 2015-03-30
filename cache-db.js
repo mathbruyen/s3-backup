@@ -13,26 +13,32 @@ module.exports = (cache, central, types) => {
     return types.indexOf(type) >= 0;
   }
 
+  function encode(type, body) {
+    try {
+      var binary = codec.encoders[type](body);
+      var frame = codec.frame({ type : type, body : binary });
+      var raw = deflate(frame);
+      var hash = sha1(raw);
+      return Promise.resolve({ raw, hash });
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
   function saveAs(type, body, callback) {
     if (!callback) {
       return saveAs.bind(null, type, body);
     }
 
-    try {
-      var raw = deflate(codec.frame({
-        type : type,
-        body : codec.encoders[type](body)
-      }));
-      var hash = sha1(raw);
-
-      var promises = [async(central.saveRaw(hash, raw))];
-      if (isCached(type)) {
-        promises.push(async(cache.saveRaw(hash, raw)));
-      }
-      Promise.all(promises).then(() => callback(null, hash), err => callback(err));
-    } catch (err) {
-      callback(err);
-    }
+    encode(type, body)
+      .then(({ raw, hash }) => {
+        var promises = [async(central.saveRaw(hash, raw))];
+        if (isCached(type)) {
+          promises.push(async(cache.saveRaw(hash, raw)));
+        }
+        return Promise.all(promises).then(() => hash);
+      })
+      .then(hash => callback(null, hash), err => callback(err));
   }
 
   function loadAs(type, hash, callback) {
