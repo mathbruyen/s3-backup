@@ -8,10 +8,12 @@ Requires [node.js](http://nodejs.org/).
 
 Copy `conf.json.example` to `conf.json` and fill values:
 
-* `bucket`: bucket name on S3
+* `bucket`: bucket name on S3, a private bucket is created if it does not exists
 * `key`: encryption key, can be generated using `openssl rand -hex 32`
 * `cache`: local folder in which to cache structure (commits and trees)
 * `folders`: folders to map on S3 as an object, keys are identifiers to be shared among synchronized computers and values are local folders to synchronize
+
+Configure [credentials for AWS SDK](http://docs.aws.amazon.com/AWSJavaScriptSDK/guide/node-configuring.html#Setting_AWS_Credentials). When using `~/.aws/credentials` the home directory is pointed at by the `HOME` environment variable on Linux and the `USERPROFILE` one on Windows (even in Cygwin).
 
 Run `npm install` and `npm run push`.
 
