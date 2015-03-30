@@ -46,23 +46,23 @@ module.exports = (cache, central, types) => {
       return loadAs.bind(null, type, hash);
     }
 
+    var promise;
     if (isCached(type)) {
-      cache.loadRaw(hash, (err, raw) => {
-        if (err) {
-          callback(err);
-        } else if (raw) {
-          callback(null, inflate(raw));
-        } else {
-          central.loadRaw(hash, (err, raw) => {
-            cache.saveRaw(hash, raw)
-              .then(() => inflate(raw))
-              .then(inflated => callback(null, inflated), err => callback(err));
-          });
-        }
-      });
+      promise = cache.loadRaw(hash)
+        .then(buffer => {
+          if (!buffer) {
+            return central.loadRaw(hash)
+              .then(raw => {
+                cache.saveRaw(hash, raw).then(() => raw);
+              });
+          }
+        });
     } else {
-      central.loadRaw(hash, callback);
+      promise = central.loadRaw(hash);
     }
+    promise
+      .then(raw => inflate(raw))
+      .then(inflated => callback(null, inflated), err => callback(err));
   }
 
   return {

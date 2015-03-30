@@ -28,6 +28,7 @@ module.exports = (AWS, bucket, key) => {
   var s3 = new AWS.S3({ apiVersion : '2006-03-01' });
 
   var upload = callback(s3.upload, s3);
+  var getObject = callback(s3.getObject, s3);
 
   function existsObject(key) {
     return new Promise((resolve, reject) => {
@@ -81,20 +82,13 @@ module.exports = (AWS, bucket, key) => {
       });
   }
 
-  function loadRaw(hash, callback) {
-    if (!callback) {
-      return loadRaw.bind(null, hash);
-    }
-
-    s3.getObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
-      if (err && err.code === 'NoSuchKey') {
-        callback();
-      } else if (err) {
-        callback(err);
-      } else {
-        callback(null, decryptBuffer(data.Body));
-      }
-    });
+  function loadRaw(hash) {
+    return getObject({ Bucket : bucket, Key : encryptString(hash) })
+      .then(data => decryptBuffer(data.Body), err => {
+        if (err.code !== 'NoSuchKey') {
+          throw err;
+        }
+      });
   }
 
   function readRef(ref, callback) {

@@ -8,6 +8,7 @@ var callback = require('./callback');
 
 var mkdirs = callback(mkdirp);
 var writeFile = callback(fs.writeFile, fs);
+var readFile = callback(fs.readFile, fs);
 
 function existsFile(file) {
   return new Promise((resolve, reject) => {
@@ -39,18 +40,13 @@ module.exports = (root) => {
       });
   }
 
-  function loadRaw(hash, callback) {
-    if (!callback) {
-      return loadRaw.bind(null, hash);
-    }
-
-    fs.readFile(getFile(hash), (err, buffer) => {
-      if (err && err.code === 'ENOENT') {
-        callback();
-      } else {
-        callback(err, buffer);
-      }
-    });
+  function loadRaw(hash) {
+    return readFile(getFile(hash))
+      .then(null, err => {
+        if (err.code !== 'ENOENT') {
+          throw err;
+        }
+      });
   }
 
   return { saveRaw, loadRaw };
