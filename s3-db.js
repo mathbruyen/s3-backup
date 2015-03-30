@@ -3,6 +3,7 @@
 
 var crypto = require('crypto');
 var Buffer = require('buffer').Buffer;
+var callback = require('./callback');
 
 function ensureBucket(s3, bucket) {
   return new Promise(function (resolve, reject) {
@@ -25,6 +26,22 @@ function ensureBucket(s3, bucket) {
 module.exports = (AWS, bucket, key) => {
 
   var s3 = new AWS.S3({ apiVersion : '2006-03-01' });
+
+  var upload = callback(s3.upload, s3);
+
+  function existsObject(key) {
+    return new Promise((resolve, reject) => {
+      s3.headObject({ Bucket : bucket, Key : key }, (err, data) => {
+        if (err && err.code === 'NotFound') {
+          resolve(false);
+        } else if (err) {
+          reject(err);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  }
 
   function encryptString(content) {
     var c = crypto.createCipher('AES-256-CTR', key);
@@ -54,18 +71,14 @@ module.exports = (AWS, bucket, key) => {
     return Buffer.concat([head, tail]);
   }
 
-  function saveRaw(hash, raw, callback) {
-    if (!callback) {
-      return saveRaw.bind(null, hash, raw);
-    }
-
-    s3.headObject({ Bucket : bucket, Key : encryptString(hash) }, (err, data) => {
-      if (err && err.code === 'NotFound') {
-        s3.upload({ Bucket : bucket, Key : encryptString(hash), Body : encryptBuffer(raw) }, callback);
-      } else {
-        callback(err);
-      }
-    });
+  function saveRaw(hash, raw) {
+    var key = encryptString(hash);
+    return existsObject(key)
+      .then(exists => {
+        if (!exists) {
+          return upload({ Bucket : bucket, Key : encryptString(hash), Body : encryptBuffer(raw) });
+        }
+      });
   }
 
   function loadRaw(hash, callback) {

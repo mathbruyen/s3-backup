@@ -32,9 +32,9 @@ module.exports = (cache, central, types) => {
 
     encode(type, body)
       .then(({ raw, hash }) => {
-        var promises = [async(central.saveRaw(hash, raw))];
+        var promises = [central.saveRaw(hash, raw)];
         if (isCached(type)) {
-          promises.push(async(cache.saveRaw(hash, raw)));
+          promises.push(cache.saveRaw(hash, raw));
         }
         return Promise.all(promises).then(() => hash);
       })
@@ -54,9 +54,9 @@ module.exports = (cache, central, types) => {
           callback(null, inflate(raw));
         } else {
           central.loadRaw(hash, (err, raw) => {
-            cache.saveRaw(hash, raw, (err) => {
-              callback(err, inflate(raw));
-            });
+            cache.saveRaw(hash, raw)
+              .then(() => inflate(raw))
+              .then(inflated => callback(null, inflated), err => callback(err));
           });
         }
       });
