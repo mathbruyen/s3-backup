@@ -1,7 +1,6 @@
 /* jshint node: true, esnext: true */
 'use strict';
 
-var async = require('./async');
 var sha1 = require('git-sha1');
 var codec = require('js-git/lib/object-codec');
 var inflate = require('js-git/lib/inflate');
