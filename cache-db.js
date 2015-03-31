@@ -24,27 +24,20 @@ module.exports = (cache, central, types) => {
     }
   }
 
-  function saveAs(type, body, callback) {
-    if (!callback) {
-      return saveAs.bind(null, type, body);
-    }
-
-    encode(type, body)
+  function saveAs(type, body) {
+    return encode(type, body)
       .then(({ raw, hash }) => {
-        var promises = [central.saveRaw(hash, raw)];
+        var p;
         if (isCached(type)) {
-          promises.push(cache.saveRaw(hash, raw));
+          p = central.saveRaw(hash, raw);
+        } else {
+          p = Promise.all([central.saveRaw(hash, raw), cache.saveRaw(hash, raw)]);
         }
-        return Promise.all(promises).then(() => hash);
-      })
-      .then(hash => callback(null, hash), err => callback(err));
+        return p.then(() => hash);
+      });
   }
 
-  function loadAs(type, hash, callback) {
-    if (!callback) {
-      return loadAs.bind(null, type, hash);
-    }
-
+  function loadAs(type, hash) {
     var promise;
     if (isCached(type)) {
       promise = cache.loadRaw(hash)
@@ -59,9 +52,7 @@ module.exports = (cache, central, types) => {
     } else {
       promise = central.loadRaw(hash);
     }
-    promise
-      .then(raw => inflate(raw))
-      .then(inflated => callback(null, inflated), err => callback(err));
+    return promise.then(inflate);
   }
 
   return {

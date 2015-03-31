@@ -7,7 +7,6 @@ var modes = require('js-git/lib/modes');
 var fs = require('fs');
 var path = require('path');
 
-var async = require('./async');
 var s3db = require('./s3-db');
 var fsdb = require('./fs-db');
 var cachedb = require('./cache-db');
@@ -56,7 +55,7 @@ function stat(file) {
 }
 
 function uploadFile(repo, file) {
-  return readFile(file).then(buffer => async(repo.saveAs('blob', buffer)));
+  return readFile(file).then(buffer => repo.saveAs('blob', buffer));
 }
 
 function uploadFolder(repo, folder) {
@@ -72,7 +71,7 @@ function uploadFolder(repo, folder) {
         return tree;
       }, {});
     })
-    .then(tree => async(repo.saveAs('tree', tree)));
+    .then(tree => repo.saveAs('tree', tree));
 }
 
 function uploadFileOrFolder(repo, folder, file) {
@@ -103,13 +102,13 @@ s3db(AWS, conf.bucket, conf.key)
       return uploadFolder(repo, conf.folders[ref])
         .then(treeHash => {
           // TODO keep parent
-          return async(repo.saveAs('commit', {
+          return repo.saveAs('commit', {
             parents : [],
             author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
             committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
             tree : treeHash,
             message : 'Push'
-          }));
+          });
         })
         .then(commitHash => {
           // TODO make reference update safe for concurrent access
