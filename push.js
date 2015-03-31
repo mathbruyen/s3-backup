@@ -10,6 +10,7 @@ var path = require('path');
 var s3db = require('./s3-db');
 var fsdb = require('./fs-db');
 var cachedb = require('./cache-db');
+var callback = require('./callback');
 
 var conf = require('./conf.json');
 
@@ -18,41 +19,9 @@ if (process.env.DEBUG) {
   AWS.config.update({ logger : process.stdout });
 }
 
-function listFiles(folder) {
-  return new Promise((resolve, reject) => {
-    fs.readdir(folder, (err, files) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(files);
-      }
-    });
-  });
-}
-
-function readFile(file) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(file, (err, buffer) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(buffer);
-      }
-    });
-  });
-}
-
-function stat(file) {
-  return new Promise((resolve, reject) => {
-    fs.stat(file, (err, stats) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(stats);
-      }
-    });
-  });
-}
+var listFiles = callback(fs.readdir, fs);
+var readFile = callback(fs.readFile, fs);
+var stat = callback(fs.stat, fs);
 
 function uploadFile(repo, file) {
   return readFile(file).then(buffer => repo.saveAs('blob', buffer));
