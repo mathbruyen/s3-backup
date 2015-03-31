@@ -29,6 +29,7 @@ module.exports = (AWS, bucket, key) => {
 
   var upload = callback(s3.upload, s3);
   var getObject = callback(s3.getObject, s3);
+  var putObject = callback(s3.putObject, s3);
 
   function existsObject(key) {
     return new Promise((resolve, reject) => {
@@ -92,27 +93,17 @@ module.exports = (AWS, bucket, key) => {
   }
 
   function readRef(ref, callback) {
-    if (!callback) {
-      return readRef.bind(null, ref);
-    }
-    
-    s3.getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) }, (err, data) => {
-      if (err && err.code === 'NoSuchKey') {
-        callback();
-      } else if (err) {
-        callback(err);
-      } else {
-        callback(null, decryptString(data.Body.toString('utf-8')));
-      }
-    });
+    return getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) })
+      .then(data => decryptString(data.Body.toString('utf-8')))
+      .then(null, err => {
+        if (err.code !== 'NoSuchKey') {
+          throw err;
+        }
+      });
   }
 
   function updateRef(ref, hash, callback) {
-    if (!callback) {
-      return updateRef.bind(null, ref, hash);
-    }
-
-    s3.putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) }, callback);
+    return putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) });
   }
 
   return ensureBucket(s3, bucket).then(() => {

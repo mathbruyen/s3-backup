@@ -113,7 +113,7 @@ s3db(AWS, conf.bucket, conf.key)
         })
         .then(commitHash => {
           // TODO make reference update safe for concurrent access
-          return async(repo.updateRef(ref, commitHash));
+          return repo.updateRef(ref, commitHash);
         });
     }));
   }).then(console.log.bind(console, 'Finished'), err => console.error('Failed', err.stack));
