@@ -17,8 +17,7 @@ module.exports = (cache, central, types) => {
       var binary = codec.encoders[type](body);
       var frame = codec.frame({ type : type, body : binary });
       var raw = deflate(frame);
-      var hash = sha1(raw);
-      return Promise.resolve({ raw, hash });
+      return Promise.resolve(raw);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -26,14 +25,29 @@ module.exports = (cache, central, types) => {
 
   function saveAs(type, body) {
     return encode(type, body)
-      .then(({ raw, hash }) => {
-        var p;
+      .then(raw => {
+        var p, hash = sha1(raw);
         if (isCached(type)) {
-          p = central.saveRaw(hash, raw);
-        } else {
           p = Promise.all([central.saveRaw(hash, raw), cache.saveRaw(hash, raw)]);
+        } else {
+          p = central.saveRaw(hash, raw);
         }
         return p.then(() => hash);
+      });
+  }
+
+  function hash(type, body) {
+    return encode(type, body).then(sha1);
+  }
+
+  function inStore(hash) {
+    return cache.exists(hash)
+      .then(ex => {
+        if (ex) {
+          return true;
+        } else {
+          return central.exists(hash);
+        }
       });
   }
 
@@ -58,6 +72,8 @@ module.exports = (cache, central, types) => {
   return {
     saveAs,
     loadAs,
+    hash,
+    inStore,
     readRef : central.readRef.bind(central),
     updateRef : central.updateRef.bind(central)
   };

@@ -49,5 +49,9 @@ module.exports = (root) => {
       });
   }
 
-  return { saveRaw, loadRaw };
+  function exists(hash) {
+    return existsFile(getFile(hash));
+  }
+
+  return { saveRaw, loadRaw, exists };
 };

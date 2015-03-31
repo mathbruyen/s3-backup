@@ -92,6 +92,11 @@ module.exports = (AWS, bucket, key) => {
       });
   }
 
+  function exists(hash) {
+    var key = encryptString(hash);
+    return existsObject(key);
+  }
+
   function readRef(ref, callback) {
     return getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) })
       .then(data => decryptString(data.Body.toString('utf-8')))
@@ -107,6 +112,6 @@ module.exports = (AWS, bucket, key) => {
   }
 
   return ensureBucket(s3, bucket).then(() => {
-    return { saveRaw, loadRaw, readRef, updateRef };
+    return { saveRaw, loadRaw, exists, readRef, updateRef };
   });
 };

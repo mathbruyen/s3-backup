@@ -23,53 +23,88 @@ var listFiles = callback(fs.readdir, fs);
 var readFile = callback(fs.readFile, fs);
 var stat = callback(fs.stat, fs);
 
-function uploadFile(repo, file) {
-  return readFile(file).then(buffer => repo.saveAs('blob', buffer));
+function statFile(repo, file, name) {
+  return readFile(file)
+    .then(buffer => repo.hash('blob', buffer))
+    .then(hash => ({ mode : modes.file, hash, name, file }));
 }
 
-function uploadFolder(repo, folder) {
-  // TODO process only one folder at a time
-  // TODO compute tree id and check whether it already exists
+function uploadFile(repo, file) {
+  return readFile(file)
+    .then(buffer => repo.saveAs('blob', buffer));
+}
+
+function statFolder(repo, folder, name) {
   return listFiles(folder)
     .then(files => {
-      return Promise.all(files.map(uploadFileOrFolder.bind(null, repo, folder)));
+      return Promise.all(files.map(statFileOrFolder.bind(null, repo, folder)));
     })
     .then(items => {
-      return items.reduce((tree, item) => {
-        tree[item.name] = { mode : item.mode, hash : item.hash };
-        return tree;
+      console.log(items);
+      var tree = items.reduce((t, item) => {
+        t[item.name] = { mode : item.mode, hash : item.hash };
+        return t;
       }, {});
-    })
-    .then(tree => repo.saveAs('tree', tree));
+      return repo.hash('tree', tree)
+        .then(hash => ({ mode : modes.tree, hash, name, items }));
+    });
 }
 
-function uploadFileOrFolder(repo, folder, file) {
+function uploadFolder(repo, hash, items) {
+  return repo.inStore(hash)
+    .then(exists => {
+      if (exists) {
+        return hash;
+      } else {
+        return Promise.all(items.map(uploadDesc.bind(null, repo)))
+          .then(actualHashes => {
+            return items.reduce((t, item, idx) => {
+              t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
+              return t;
+            }, {});
+          })
+          .then(tree => repo.saveAs('tree', tree));
+      }
+    });
+}
+
+function statFileOrFolder(repo, folder, file) {
   var item = path.join(folder, file);
   return stat(item)
     .then(stats => {
       if (stats.isFile()) {
-        return uploadFile(repo, item).then(hash => {
-          return { name : file, mode : modes.file, hash : hash };
-        });
+        return statFile(repo, item, file);
       } else if (stats.isDirectory()) {
-        return uploadFolder(repo, item).then(hash => {
-          return { name : file, mode : modes.tree, hash : hash };
-        });
+        return statFolder(repo, item, file);
       } else {
         return Promise.reject(new Error('Unrecognized stats: ' + JSON.stringify(stats)));
       }
     });
 }
 
+function uploadDesc(repo, desc) {
+  if (desc.mode === modes.file) {
+    return uploadFile(repo, desc.file);
+  } else {
+    return uploadFolder(repo, desc.hash, desc.items);
+  }
+}
+
+function upload(repo, folder) {
+  return statFolder(repo, folder, 'IGNORED')
+    .then(desc => uploadDesc(repo, desc));
+}
+
 s3db(AWS, conf.bucket, conf.key)
   .then(s3repo => {
     var fsrepo = fsdb(conf.cache);
-    return cachedb(fsrepo, s3repo, ['tree', 'commit']);
+    return cachedb(fsrepo, s3repo, ['tree', 'commit', 'blob']);
   })
   .then(repo => {
     return Promise.all(Object.keys(conf.folders).map(ref => {
-      return uploadFolder(repo, conf.folders[ref])
+      return upload(repo, conf.folders[ref])
         .then(treeHash => {
+          console.log(treeHash);
           // TODO keep parent
           return repo.saveAs('commit', {
             parents : [],
