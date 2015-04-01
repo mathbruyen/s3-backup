@@ -26,10 +26,11 @@ var stat = callback(fs.stat, fs);
 function statFile(repo, file, name) {
   return readFile(file)
     .then(buffer => repo.hash('blob', buffer))
-    .then(hash => ({ mode : modes.file, hash, name, file }));
+    .then(hash => ({ mode : modes.file, hash, name, path : file }));
 }
 
 function uploadFile(repo, file) {
+  console.log('Uploading file: ' + file);
   return readFile(file)
     .then(buffer => repo.saveAs('blob', buffer));
 }
@@ -40,30 +41,31 @@ function statFolder(repo, folder, name) {
       return Promise.all(files.map(statFileOrFolder.bind(null, repo, folder)));
     })
     .then(items => {
-      console.log(items);
       var tree = items.reduce((t, item) => {
         t[item.name] = { mode : item.mode, hash : item.hash };
         return t;
       }, {});
       return repo.hash('tree', tree)
-        .then(hash => ({ mode : modes.tree, hash, name, items }));
+        .then(hash => ({ mode : modes.tree, hash, name, items, path : folder }));
     });
 }
 
-function uploadFolder(repo, hash, items) {
+function uploadFolder(repo, hash, items, folder) {
   return repo.inStore(hash)
     .then(exists => {
       if (exists) {
+        console.log('Already up to date folder: ' + folder);
         return hash;
       } else {
         return Promise.all(items.map(uploadDesc.bind(null, repo)))
           .then(actualHashes => {
-            return items.reduce((t, item, idx) => {
+            var tree = items.reduce((t, item, idx) => {
               t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
               return t;
             }, {});
-          })
-          .then(tree => repo.saveAs('tree', tree));
+            console.log('Uploading folder: ' + folder);
+            return repo.saveAs('tree', tree);
+          });
       }
     });
 }
@@ -84,9 +86,9 @@ function statFileOrFolder(repo, folder, file) {
 
 function uploadDesc(repo, desc) {
   if (desc.mode === modes.file) {
-    return uploadFile(repo, desc.file);
+    return uploadFile(repo, desc.path);
   } else {
-    return uploadFolder(repo, desc.hash, desc.items);
+    return uploadFolder(repo, desc.hash, desc.items, desc.path);
   }
 }
 
@@ -104,7 +106,6 @@ s3db(AWS, conf.bucket, conf.key)
     return Promise.all(Object.keys(conf.folders).map(ref => {
       return upload(repo, conf.folders[ref])
         .then(treeHash => {
-          console.log(treeHash);
           // TODO keep parent
           return repo.saveAs('commit', {
             parents : [],
