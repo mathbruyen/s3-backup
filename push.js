@@ -100,7 +100,7 @@ function upload(repo, folder) {
 s3db(AWS, conf.bucket, conf.key)
   .then(s3repo => {
     var fsrepo = fsdb(conf.cache);
-    return cachedb(fsrepo, s3repo, ['tree', 'commit', 'blob']);
+    return cachedb(fsrepo, s3repo, ['tree', 'commit']);
   })
   .then(repo => {
     return Promise.all(Object.keys(conf.folders).map(ref => {
