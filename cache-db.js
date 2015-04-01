@@ -15,8 +15,7 @@ module.exports = (cache, central, types) => {
   function encode(type, body) {
     try {
       var binary = codec.encoders[type](body);
-      var frame = codec.frame({ type : type, body : binary });
-      var raw = deflate(frame);
+      var raw = codec.frame({ type : type, body : binary });
       return Promise.resolve(raw);
     } catch (err) {
       return Promise.reject(err);
@@ -26,11 +25,11 @@ module.exports = (cache, central, types) => {
   function saveAs(type, body) {
     return encode(type, body)
       .then(raw => {
-        var p, hash = sha1(raw);
+        var p, hash = sha1(raw), buffer = deflate(raw);
         if (isCached(type)) {
-          p = Promise.all([central.saveRaw(hash, raw), cache.saveRaw(hash, raw)]);
+          p = Promise.all([central.saveRaw(hash, buffer), cache.saveRaw(hash, buffer)]);
         } else {
-          p = central.saveRaw(hash, raw);
+          p = central.saveRaw(hash, buffer);
         }
         return p.then(() => hash);
       });
