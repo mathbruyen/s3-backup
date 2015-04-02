@@ -11,6 +11,7 @@ var s3db = require('./s3-db');
 var fsdb = require('./fs-db');
 var cachedb = require('./cache-db');
 var callback = require('./callback');
+var queue = require('./queue');
 
 var conf = require('./conf.json');
 
@@ -29,11 +30,11 @@ function statFile(repo, file, name) {
     .then(hash => ({ mode : modes.file, hash, name, path : file }));
 }
 
-function uploadFile(repo, file) {
+var uploadFile = queue((repo, file) => {
   console.log('Uploading file: ' + file);
   return readFile(file)
     .then(buffer => repo.saveAs('blob', buffer));
-}
+}, null, 5);
 
 function statFolder(repo, folder, name) {
   return listFiles(folder)
