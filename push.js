@@ -105,20 +105,31 @@ s3db(AWS, conf.bucket, conf.key)
   })
   .then(repo => {
     return Promise.all(Object.keys(conf.folders).map(ref => {
-      return upload(repo, conf.folders[ref])
-        .then(treeHash => {
-          // TODO keep parent
-          return repo.saveAs('commit', {
-            parents : [],
-            author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-            committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-            tree : treeHash,
-            message : 'Push'
-          });
-        })
+      return repo.readRef(ref)
         .then(commitHash => {
-          // TODO make reference update safe for concurrent access
-          return repo.updateRef(ref, commitHash);
+          if (commitHash) {
+            return repo.loadAs('commit', commitHash);
+          }
+        })
+        .then(commit => {
+          return upload(repo, conf.folders[ref])
+            .then(treeHash => {
+              if (commit && treeHash == commit.tree) {
+                console.log('Nothing changed for ' + ref);
+              } else {
+                // TODO make reference update safe for concurrent access
+                console.log('Updating reference ' + ref);
+                var newCommit = {
+                  parents : [],
+                  author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+                  committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+                  tree : treeHash,
+                  message : 'Push'
+                };
+                return repo.saveAs('commit', newCommit)
+                  .then(commitHash => repo.updateRef(ref, commitHash));
+              }
+            });
         });
     }));
   }).then(console.log.bind(console, 'Finished'), err => console.error('Failed', err.stack));
