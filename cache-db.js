@@ -55,7 +55,9 @@ module.exports = (cache, central, types) => {
     if (isCached(type)) {
       promise = cache.loadRaw(hash)
         .then(buffer => {
-          if (!buffer) {
+          if (buffer) {
+            return buffer;
+          } else {
             return central.loadRaw(hash)
               .then(raw => {
                 cache.saveRaw(hash, raw).then(() => raw);
@@ -65,7 +67,16 @@ module.exports = (cache, central, types) => {
     } else {
       promise = central.loadRaw(hash);
     }
-    return promise.then(inflate);
+    return promise.then(inflate)
+      .then(buffer => {
+        if (buffer) {
+          var raw = codec.deframe(buffer);
+          if (raw.type !== type) {
+            throw new TypeError('Expected a git ' + type + ', found a ' + raw.type);
+          }
+          return codec.decoders[raw.type](raw.body);
+        }
+      });
   }
 
   return {
