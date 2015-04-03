@@ -34,11 +34,11 @@ module.exports = (cache, central, types) => {
   function saveAs(type, body) {
     return encode(type, body)
       .then(raw => {
-        var p, hash = sha1(raw), buffer = deflate(raw);
+        var hash = sha1(raw);
+        var buffer = deflate(raw);
+        var p = central.saveRaw(hash, buffer);
         if (isCached(type)) {
-          p = Promise.all([central.saveRaw(hash, buffer), cache.saveRaw(hash, buffer)]);
-        } else {
-          p = central.saveRaw(hash, buffer);
+          p = p.then(() => cache.saveRaw(hash, buffer));
         }
         return p.then(() => hash);
       });
