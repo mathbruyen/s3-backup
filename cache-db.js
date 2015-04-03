@@ -13,13 +13,22 @@ module.exports = (cache, central, types) => {
   }
 
   function encode(type, body) {
-    try {
-      var binary = codec.encoders[type](body);
-      var raw = codec.frame({ type : type, body : binary });
-      return Promise.resolve(raw);
-    } catch (err) {
-      return Promise.reject(err);
-    }
+    return Promise.resolve(body)
+      .then(b => codec.encoders[type](b))
+      .then(binary => codec.frame({ type : type, body : binary }));
+  }
+
+  function decode(type, buffer) {
+    return Promise.resolve(buffer)
+      .then(raw => codec.deframe(raw))
+      .then(deframed => {
+        if (deframed.type === type) {
+          return deframed.body;
+        } else {
+          throw new TypeError('Expected a git ' + type + ', found a ' + deframed.type);
+        }
+      })
+      .then(body => codec.decoders[type](body));
   }
 
   function saveAs(type, body) {
@@ -67,16 +76,7 @@ module.exports = (cache, central, types) => {
     } else {
       promise = central.loadRaw(hash);
     }
-    return promise.then(inflate)
-      .then(buffer => {
-        if (buffer) {
-          var raw = codec.deframe(buffer);
-          if (raw.type !== type) {
-            throw new TypeError('Expected a git ' + type + ', found a ' + raw.type);
-          }
-          return codec.decoders[raw.type](raw.body);
-        }
-      });
+    return promise.then(inflate).then(buffer => decode(type, buffer));
   }
 
   return {
