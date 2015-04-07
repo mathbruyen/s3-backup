@@ -76,7 +76,16 @@ module.exports = (cache, central, types) => {
     } else {
       promise = central.loadRaw(hash);
     }
-    return promise.then(inflate).then(buffer => decode(type, buffer));
+    return promise.then(inflate)
+        .then(buffer => {
+          var h = sha1(buffer);
+          if (hash === h) {
+            return buffer;
+          } else {
+            throw new Error('Invalid content, expected to have hash ' + hash + ' but got ' + h);
+          }
+        })
+        .then(buffer => decode(type, buffer));
   }
 
   return {
