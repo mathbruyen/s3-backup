@@ -97,7 +97,7 @@ module.exports = (AWS, bucket, key) => {
     return existsObject(key);
   }
 
-  function readRef(ref, callback) {
+  function readRef(ref) {
     return getObject({ Bucket : bucket, Key : encryptString('refs/' + ref) })
       .then(data => decryptString(data.Body.toString('utf-8')))
       .then(null, err => {
@@ -107,8 +107,9 @@ module.exports = (AWS, bucket, key) => {
       });
   }
 
-  function updateRef(ref, hash, callback) {
-    return putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(hash) });
+  function updateRef(ref, from, to) {
+    // TODO make reference update safe for concurrent access
+    return putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(to) });
   }
 
   return ensureBucket(s3, bucket).then(() => {

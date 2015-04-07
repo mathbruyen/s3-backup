@@ -105,31 +105,29 @@ s3db(AWS, conf.bucket, conf.key)
   })
   .then(repo => {
     return Promise.all(Object.keys(conf.folders).map(ref => {
-      return repo.readRef(ref)
-        .then(commitHash => {
-          if (commitHash) {
-            return repo.loadAs('commit', commitHash);
-          }
-        })
-        .then(commit => {
-          return upload(repo, conf.folders[ref])
-            .then(treeHash => {
-              if (commit && treeHash == commit.tree) {
-                console.log('Nothing changed for ' + ref);
-              } else {
-                // TODO make reference update safe for concurrent access
-                console.log('Updating reference ' + ref);
-                var newCommit = {
-                  parents : [],
-                  author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-                  committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-                  tree : treeHash,
-                  message : 'Push'
-                };
-                return repo.saveAs('commit', newCommit)
-                  .then(commitHash => repo.updateRef(ref, commitHash));
-              }
-            });
-        });
+      var ch = repo.readRef(ref);
+      var cc = ch.then(currentCommitHash => {
+            if (currentCommitHash) {
+              return repo.loadAs('commit', currentCommitHash);
+            }
+          });
+      var ut = upload(repo, conf.folders[ref]);
+      return Promise.all([ch, cc, ut])
+          .then(([currentCommitHash, currentCommit, uploadedTreeHash]) => {
+            if (currentCommit && uploadedTreeHash == currentCommit.tree) {
+              console.log('Nothing changed in ' + ref);
+            } else {
+              console.log('Updating reference ' + ref);
+              var newCommit = {
+                parents : [currentCommitHash],
+                author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+                committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+                tree : uploadedTreeHash,
+                message : 'Push'
+              };
+              return repo.saveAs('commit', newCommit)
+                .then(newHash => repo.updateRef(ref, currentCommitHash, newHash));
+            }
+          });
     }));
   }).then(console.log.bind(console, 'Finished'), err => console.error('Failed', err.stack));
