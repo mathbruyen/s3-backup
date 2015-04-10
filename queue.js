@@ -18,8 +18,7 @@ function queue(fn, scope, max) {
     mayProcess();
   }
 
-  return function () {
-    var args = Array.prototype.slice.call(arguments);
+  return function (...args) {
     return new Promise(resolve => { q.push(resolve); mayProcess(); })
       .then(() => {
         var p = fn.apply(scope, args);

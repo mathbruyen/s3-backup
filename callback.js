@@ -2,8 +2,7 @@
 'use strict';
 
 function callback(fn, scope) {
-  return function () {
-    var args = Array.prototype.slice.call(arguments);
+  return function (...args) {
     return new Promise((resolve, reject) => {
       args.push((err, res) => {
         if (err) {
