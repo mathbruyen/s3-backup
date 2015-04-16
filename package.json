@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Encrypted backup on S3",
   "scripts": {
-    "push": "babel-node push.js"
+    "push": "babel-node --optional es7.asyncFunctions push.js"
   },
   "author": "Mathieu Bruyen <code@mais-h.eu>",
   "license": "MIT",

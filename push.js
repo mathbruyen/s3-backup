@@ -13,8 +13,6 @@ var cachedb = require('./cache-db');
 var callback = require('./callback');
 var queue = require('./queue');
 
-var conf = require('./conf.json');
-
 AWS.config.update({ region : 'eu-west-1' });
 if (process.env.DEBUG) {
   AWS.config.update({ logger : process.stdout });
@@ -24,110 +22,97 @@ var listFiles = callback(fs.readdir, fs);
 var readFile = callback(fs.readFile, fs);
 var stat = callback(fs.stat, fs);
 
-function statFile(repo, file, name) {
-  return readFile(file)
-    .then(buffer => repo.hash('blob', buffer))
-    .then(hash => ({ mode : modes.file, hash, name, path : file }));
+async function statFile(repo, file, name) {
+  var buffer = await readFile(file);
+  var hash = await repo.hash('blob', buffer);
+  return { mode : modes.file, hash, name, path : file };
 }
 
-var uploadFile = queue((repo, file) => {
+var uploadFile = queue(async (repo, file) => {
   console.log('Uploading file: ' + file);
-  return readFile(file)
-    .then(buffer => repo.saveAs('blob', buffer));
+  var buffer = await readFile(file);
+  return await repo.saveAs('blob', buffer);
 }, null, 5);
 
-function statFolder(repo, folder, name) {
-  return listFiles(folder)
-    .then(files => {
-      return Promise.all(files.map(statFileOrFolder.bind(null, repo, folder)));
-    })
-    .then(items => {
-      var tree = items.reduce((t, item) => {
-        t[item.name] = { mode : item.mode, hash : item.hash };
-        return t;
-      }, {});
-      return repo.hash('tree', tree)
-        .then(hash => ({ mode : modes.tree, hash, name, items, path : folder }));
-    });
+async function statFolder(repo, folder, name) {
+  var files = await listFiles(folder);
+  var items = await Promise.all(files.map(file => statFileOrFolder(repo, folder, file)));
+  var tree = items.reduce((t, item) => {
+    t[item.name] = { mode : item.mode, hash : item.hash };
+    return t;
+  }, {});
+  var hash = await repo.hash('tree', tree);
+  return { mode : modes.tree, hash, name, items, path : folder };
 }
 
-function uploadFolder(repo, hash, items, folder) {
-  return repo.inStore(hash)
-    .then(exists => {
-      if (exists) {
-        console.log('Already up to date folder: ' + folder);
-        return hash;
-      } else {
-        return Promise.all(items.map(uploadDesc.bind(null, repo)))
-          .then(actualHashes => {
-            var tree = items.reduce((t, item, idx) => {
-              t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
-              return t;
-            }, {});
-            console.log('Uploading folder: ' + folder);
-            return repo.saveAs('tree', tree);
-          });
-      }
-    });
-}
-
-function statFileOrFolder(repo, folder, file) {
-  var item = path.join(folder, file);
-  return stat(item)
-    .then(stats => {
-      if (stats.isFile()) {
-        return statFile(repo, item, file);
-      } else if (stats.isDirectory()) {
-        return statFolder(repo, item, file);
-      } else {
-        return Promise.reject(new Error('Unrecognized stats: ' + JSON.stringify(stats)));
-      }
-    });
-}
-
-function uploadDesc(repo, desc) {
-  if (desc.mode === modes.file) {
-    return uploadFile(repo, desc.path);
+async function uploadFolder(repo, hash, items, folder) {
+  var exists = await repo.inStore(hash);
+  if (exists) {
+    console.log('Already up to date folder: ' + folder);
+    return hash;
   } else {
-    return uploadFolder(repo, desc.hash, desc.items, desc.path);
+    var actualHashes = await Promise.all(items.map(item => uploadDesc(repo, item)));
+    var tree = items.reduce((t, item, idx) => {
+      t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
+      return t;
+    }, {});
+    console.log('Uploading folder: ' + folder);
+    return await repo.saveAs('tree', tree);
   }
 }
 
-function upload(repo, folder) {
-  return statFolder(repo, folder, 'IGNORED')
-    .then(desc => uploadDesc(repo, desc));
+async function statFileOrFolder(repo, folder, file) {
+  var item = path.join(folder, file);
+  var stats = await stat(item);
+  if (stats.isFile()) {
+    return await statFile(repo, item, file);
+  } else if (stats.isDirectory()) {
+    return await statFolder(repo, item, file);
+  } else {
+    throw new Error('Unrecognized stats: ' + JSON.stringify(stats));
+  }
 }
 
-s3db(AWS, conf.bucket, conf.key)
-  .then(s3repo => {
-    var fsrepo = fsdb(conf.cache);
-    return cachedb(fsrepo, s3repo, ['tree', 'commit']);
-  })
-  .then(repo => {
-    return Promise.all(Object.keys(conf.folders).map(ref => {
-      var ch = repo.readRef(ref);
-      var cc = ch.then(currentCommitHash => {
-            if (currentCommitHash) {
-              return repo.loadAs('commit', currentCommitHash);
-            }
-          });
-      var ut = upload(repo, conf.folders[ref]);
-      return Promise.all([ch, cc, ut])
-          .then(([currentCommitHash, currentCommit, uploadedTreeHash]) => {
-            if (currentCommit && uploadedTreeHash == currentCommit.tree) {
-              console.log('Nothing changed in ' + ref);
-            } else {
-              console.log('Updating reference ' + ref);
-              var newCommit = {
-                parents : [currentCommitHash],
-                author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-                committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
-                tree : uploadedTreeHash,
-                message : 'Push'
-              };
-              return repo.saveAs('commit', newCommit)
-                .then(newHash => repo.updateRef(ref, currentCommitHash, newHash));
-            }
-          });
-    }));
-  }).then(console.log.bind(console, 'Finished'), err => console.error('Failed', err.stack));
+async function uploadDesc(repo, desc) {
+  if (desc.mode === modes.file) {
+    return await uploadFile(repo, desc.path);
+  } else {
+    return await uploadFolder(repo, desc.hash, desc.items, desc.path);
+  }
+}
+
+async function upload(repo, folder) {
+  var desc = await statFolder(repo, folder, 'IGNORED');
+  return await uploadDesc(repo, desc);
+}
+
+async function pushOne(repo, ref, folder) {
+  var ut = upload(repo, folder);
+  var currentCommitHash = await repo.readRef(ref);
+  var currentCommit = await repo.loadAs('commit', currentCommitHash);
+  var uploadedTreeHash = await ut;
+  if (currentCommit && uploadedTreeHash == currentCommit.tree) {
+    console.log('Nothing changed in ' + ref);
+  } else {
+    console.log('Updating reference ' + ref + ' to ' + currentCommitHash);
+    var newCommit = {
+      parents : [currentCommitHash],
+      author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+      committer : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
+      tree : uploadedTreeHash,
+      message : 'Push'
+    };
+    var newHash = await repo.saveAs('commit', newCommit);
+    await repo.updateRef(ref, currentCommitHash, newHash);
+  }
+}
+
+async function push(conf) {
+  var fsrepo = fsdb(conf.cache);
+  var s3repo = await s3db(AWS, conf.bucket, conf.key);
+  var repo = cachedb(fsrepo, s3repo, ['tree', 'commit']);
+  await Promise.all(Object.keys(conf.folders).map(ref => pushOne(repo, ref, conf.folders[ref])));
+}
+
+push(require('./conf.json'))
+  .then(() => console.log('Finished'), err => console.error('Failed', err.stack));
