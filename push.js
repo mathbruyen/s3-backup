@@ -22,11 +22,12 @@ var listFiles = callback(fs.readdir, fs);
 var readFile = callback(fs.readFile, fs);
 var stat = callback(fs.stat, fs);
 
-async function statFile(repo, file, name) {
+var statFile = queue(async (repo, file, name) => {
+  console.log('Reading file: ' + file);
   var buffer = await readFile(file);
   var hash = await repo.hash('blob', buffer);
   return { mode : modes.file, hash, name, path : file };
-}
+}, null, 5);
 
 var uploadFile = queue(async (repo, file) => {
   console.log('Uploading file: ' + file);
