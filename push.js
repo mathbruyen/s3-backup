@@ -35,15 +35,23 @@ var uploadFile = queue(async (repo, file) => {
   return await repo.saveAs('blob', buffer);
 }, null, 5);
 
+function itemsToTree(items) {
+  var tree = {};
+  items.forEach(({ name, mode, hash }) => tree[name] = { mode, hash });
+  return tree;
+}
+
 async function statFolder(repo, folder, name) {
   var files = await listFiles(folder);
   var items = await* files.map(file => statFileOrFolder(repo, folder, file));
-  var tree = items.reduce((t, item) => {
-    t[item.name] = { mode : item.mode, hash : item.hash };
-    return t;
-  }, {});
+  var tree = itemsToTree(items);
   var hash = await repo.hash('tree', tree);
   return { mode : modes.tree, hash, name, items, path : folder };
+}
+
+async function uploadItem(repo, item) {
+  var hash = await uploadDesc(repo, item);
+  return { name : item.name, mode : item.mode, hash };
 }
 
 async function uploadFolder(repo, hash, items, folder) {
@@ -52,12 +60,9 @@ async function uploadFolder(repo, hash, items, folder) {
     console.log('Already up to date folder: ' + folder);
     return hash;
   } else {
-    var actualHashes = await* items.map(item => uploadDesc(repo, item));
-    var tree = items.reduce((t, item, idx) => {
-      t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
-      return t;
-    }, {});
     console.log('Uploading folder: ' + folder);
+    var actualItems = await* items.map(item => uploadItem(repo, item));
+    var tree = itemsToTree(actualItems);
     return await repo.saveAs('tree', tree);
   }
 }
