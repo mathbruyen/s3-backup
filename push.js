@@ -90,7 +90,7 @@ async function upload(repo, folder) {
 async function pushOne(repo, ref, folder) {
   var ut = upload(repo, folder);
   var currentCommitHash = await repo.readRef(ref);
-  var currentCommit = await repo.loadAs('commit', currentCommitHash);
+  var currentCommit = currentCommitHash ? await repo.loadAs('commit', currentCommitHash) : null;
   var uploadedTreeHash = await ut;
   if (currentCommit && uploadedTreeHash == currentCommit.tree) {
     console.log('Nothing changed in ' + ref);
