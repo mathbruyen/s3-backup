@@ -37,7 +37,7 @@ var uploadFile = queue(async (repo, file) => {
 
 async function statFolder(repo, folder, name) {
   var files = await listFiles(folder);
-  var items = await Promise.all(files.map(file => statFileOrFolder(repo, folder, file)));
+  var items = await* files.map(file => statFileOrFolder(repo, folder, file));
   var tree = items.reduce((t, item) => {
     t[item.name] = { mode : item.mode, hash : item.hash };
     return t;
@@ -52,7 +52,7 @@ async function uploadFolder(repo, hash, items, folder) {
     console.log('Already up to date folder: ' + folder);
     return hash;
   } else {
-    var actualHashes = await Promise.all(items.map(item => uploadDesc(repo, item)));
+    var actualHashes = await* items.map(item => uploadDesc(repo, item));
     var tree = items.reduce((t, item, idx) => {
       t[item.name] = { mode : item.mode, hash : actualHashes[idx] };
       return t;
@@ -113,7 +113,7 @@ async function push(conf) {
   var fsrepo = fsdb(conf.cache);
   var s3repo = await s3db(AWS, conf.bucket, conf.key);
   var repo = cachedb(fsrepo, s3repo, ['tree', 'commit']);
-  await Promise.all(Object.keys(conf.folders).map(ref => pushOne(repo, ref, conf.folders[ref])));
+  await* Object.keys(conf.folders).map(ref => pushOne(repo, ref, conf.folders[ref]));
 }
 
 push(require('./conf.json'))
