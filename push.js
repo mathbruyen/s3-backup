@@ -95,7 +95,7 @@ async function pushOne(repo, ref, folder) {
   if (currentCommit && uploadedTreeHash == currentCommit.tree) {
     console.log('Nothing changed in ' + ref);
   } else {
-    console.log('Updating reference ' + ref + ' to ' + currentCommitHash);
+    console.log('Creating commit to ' + uploadedTreeHash);
     var newCommit = {
       parents : [currentCommitHash],
       author : { name : 'Mathieu', email : 'code@mais-h.eu', date : new Date() },
@@ -104,6 +104,7 @@ async function pushOne(repo, ref, folder) {
       message : 'Push'
     };
     var newHash = await repo.saveAs('commit', newCommit);
+    console.log('Updating reference ' + ref + ' to ' + newHash);
     await repo.updateRef(ref, currentCommitHash, newHash);
   }
 }
