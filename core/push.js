@@ -122,5 +122,5 @@ async function push(conf) {
   await* Object.keys(conf.folders).map(ref => pushOne(ref, conf.folders[ref]));
 }
 
-push(require('./conf.json'))
+push(require('../conf.json'))
   .then(() => console.log('Finished'), err => console.error('Failed', err.stack));
