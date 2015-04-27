@@ -13,11 +13,6 @@ var cachedb = require('./cache-db');
 var callback = require('./callback');
 var queue = require('./queue');
 
-AWS.config.update({ region : 'eu-west-1' });
-if (process.env.DEBUG) {
-  AWS.config.update({ logger : process.stdout });
-}
-
 var listFiles = callback(fs.readdir, fs);
 var readFile = callback(fs.readFile, fs);
 var stat = callback(fs.stat, fs);
@@ -28,7 +23,18 @@ function itemsToTree(items) {
   return tree;
 }
 
+function getUserHome() {
+  return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
+}
+
 async function push(conf) {
+
+  AWS.config.update({ region : 'eu-west-1' });
+  if (process.env.DEBUG) {
+    AWS.config.update({ logger : process.stdout });
+  }
+  AWS.config.update({ accessKeyId: conf.access_key_id, secretAccessKey : conf.secret_access_key });
+
   var fsrepo = fsdb(conf.cache);
   var s3repo = await s3db(AWS, conf.bucket, conf.key);
   var repo = cachedb(fsrepo, s3repo, ['tree', 'commit']);
@@ -122,5 +128,5 @@ async function push(conf) {
   await* Object.keys(conf.folders).map(ref => pushOne(ref, conf.folders[ref]));
 }
 
-push(require('../conf.json'))
+push(require(getUserHome() + '/.backup.json'))
   .then(() => console.log('Finished'), err => console.error('Failed', err.stack));

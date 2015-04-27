@@ -1,5 +1,7 @@
 {
   "bucket" : "s3 bucket name",
+  "access_key_id" : "AWS access key id",
+  "secret_access_key" : "AWS access key secret",
   "key" : "encryption key",
   "cache" : "/tmp/backup.git",
   "folders" : {
