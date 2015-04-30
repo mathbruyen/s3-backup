@@ -7,7 +7,7 @@
     "push": "babel-node --optional es7.asyncFunctions core/push.js",
     "pages": "npm run clean-pages && npm run build-pages && npm run stage-pages",
     "build-pages": "cp -R webapp/static/* _gh-pages && browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
-    "clean-pages": "cd _gh-pages && git rm -rf .",
+    "clean-pages": "cd _gh-pages && git rm -rf --ignore-unmatch .",
     "stage-pages": "cd _gh-pages && git add .",
     "deploy-pages": "cd _gh-pages && git commit -m \"Update site\" && git push",
     "setup-pages": "git clone --depth 1 -b gh-pages $(git config --get remote.origin.url) _gh-pages"
@@ -23,6 +23,8 @@
   },
   "devDependencies": {
     "babelify": "^6.0.2",
-    "browserify": "^9.0.8"
+    "browserify": "^9.0.8",
+    "react": "^0.13.2",
+    "rx": "^2.5.2"
   }
 }
