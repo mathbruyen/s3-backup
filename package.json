@@ -5,11 +5,12 @@
   "description": "Encrypted backup on S3",
   "scripts": {
     "push": "babel-node --optional es7.asyncFunctions core/push.js",
-    "pages": "npm run clean-pages && npm run build-pages && npm run stage-pages",
-    "build-pages": "cp -R webapp/static/* _gh-pages && browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
+    "pages": "npm run clean-pages && npm run copy-statics && npm run build-pages && npm run stage-pages",
     "clean-pages": "cd _gh-pages && git rm -rf --ignore-unmatch .",
+    "copy-statics": "cp -R webapp/static/* _gh-pages",
+    "build-pages": "browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
     "stage-pages": "cd _gh-pages && git add .",
-    "deploy-pages": "cd _gh-pages && git commit -m \"Update site\" && git push",
+    "deploy-pages": "cd _gh-pages && git add . && git commit -m \"Update site\" && git push",
     "setup-pages": "git clone --depth 1 -b gh-pages $(git config --get remote.origin.url) _gh-pages"
   },
   "author": "Mathieu Bruyen <code@mais-h.eu>",
