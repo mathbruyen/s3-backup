@@ -34,7 +34,11 @@ module.exports = React.createClass({
     var keyInput = React.DOM.input({ type : 'password', value : this.state.key, onChange : this._onKeyChange });
     var key = React.DOM.div(null, keyLabel, keyInput);
 
-    return React.DOM.form(null, bucket, id, secret, key);
+    var referenceLabel = React.DOM.label(null, 'Git reference:');
+    var referenceInput = React.DOM.input({ type : 'text', value : this.state.ref, onChange : this._onRefChange });
+    var reference = React.DOM.div(null, referenceLabel, referenceInput);
+
+    return React.DOM.form(null, bucket, id, secret, key, reference);
   },
 
   _onIdChange : function (event) {
@@ -51,5 +55,9 @@ module.exports = React.createClass({
 
   _onKeyChange : function (event) {
     this.props.dispatch({ action : 'ENCRYPTION_KEY_CHANGED', key : event.target.value });
+  },
+
+  _onRefChange : function (event) {
+    this.props.dispatch({ action : 'REFERENCE_CHANGED', ref : event.target.value });
   }
 });

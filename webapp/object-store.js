@@ -42,6 +42,11 @@ module.exports = (dispatcher, storage) => {
       value.config.key = action.key;
       writeConfig(value.config);
       return value;
+    },
+    REFERENCE_CHANGED : (value, action) => {
+      value.config.ref = action.ref;
+      writeConfig(value.config);
+      return value;
     }
   });
 };
