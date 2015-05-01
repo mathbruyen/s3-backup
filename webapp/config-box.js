@@ -14,7 +14,7 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.value.config;
+    return this.props.objects.getConfig();
   },
 
   render : function () {

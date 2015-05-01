@@ -17,36 +17,39 @@ module.exports = (dispatcher, storage) => {
     }
   }
 
-  function writeConfig(config) {
+  // TODO use immutable data structure
+  var config = readConfig();
+
+  function writeConfig() {
     storage.setItem('config', JSON.stringify(config));
   }
 
-  // TODO use immutable data structure
-  return newStore(dispatcher, { config : readConfig() }, {
-    KEY_ID_CHANGED : (value, action) => {
-      value.config.id = action.id;
-      writeConfig(value.config);
-      return value;
+  function getConfig() {
+    return config;
+  }
+
+  var onChange = newStore(dispatcher, {
+    KEY_ID_CHANGED : (action) => {
+      config.id = action.id;
+      writeConfig();
     },
-    KEY_SECRET_CHANGED : (value, action) => {
-      value.config.secret = action.secret;
-      writeConfig(value.config);
-      return value;
+    KEY_SECRET_CHANGED : (action) => {
+      config.secret = action.secret;
+      writeConfig();
     },
-    BUCKET_CHANGED : (value, action) => {
-      value.config.bucket = action.bucket;
-      writeConfig(value.config);
-      return value;
+    BUCKET_CHANGED : (action) => {
+      config.bucket = action.bucket;
+      writeConfig();
     },
-    ENCRYPTION_KEY_CHANGED : (value, action) => {
-      value.config.key = action.key;
-      writeConfig(value.config);
-      return value;
+    ENCRYPTION_KEY_CHANGED : (action) => {
+      config.key = action.key;
+      writeConfig();
     },
-    REFERENCE_CHANGED : (value, action) => {
-      value.config.ref = action.ref;
-      writeConfig(value.config);
-      return value;
+    REFERENCE_CHANGED : (action) => {
+      config.ref = action.ref;
+      writeConfig();
     }
   });
+
+  return { onChange, getConfig };
 };
