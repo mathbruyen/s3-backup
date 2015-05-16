@@ -9,6 +9,7 @@
     "clean-pages": "find _gh-pages/ ! -path '_gh-pages/.git*' -type f -exec rm -f {} +",
     "copy-statics": "cp -R webapp/static/* _gh-pages",
     "build-pages": "browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
+    "serve-pages": "http-server -p 8080 _gh-pages",
     "deploy-pages": "cd _gh-pages && git add --all && git commit -m \"Update site\" && git push",
     "setup-pages": "git clone --depth 1 -b gh-pages $(git config --get remote.origin.url) _gh-pages"
   },
@@ -22,6 +23,7 @@
     "mkdirp": "^0.5.0"
   },
   "devDependencies": {
+    "http-server": "^0.8.0",
     "babelify": "^6.0.2",
     "browserify": "^9.0.8",
     "react": "^0.13.2",
