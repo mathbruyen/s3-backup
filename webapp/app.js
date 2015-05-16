@@ -7,5 +7,10 @@ var dispatcher = require('./dispatcher')();
 var objects = require('./object-store')(dispatcher, window.localStorage);
 
 var ConfigBox = require('./config-box');
+var ContentBox = require('./content-box');
 
-React.render(React.createElement(ConfigBox, { dispatch : dispatcher.dispatch, objects }), document.body);
+React.render(React.DOM.div(
+  null,
+  React.createElement(ConfigBox, { dispatch : dispatcher.dispatch, objects }),
+  React.createElement(ContentBox, { dispatch : dispatcher.dispatch, objects })
+), document.body);
