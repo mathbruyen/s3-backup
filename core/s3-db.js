@@ -5,24 +5,6 @@ var crypto = require('crypto');
 var Buffer = require('buffer').Buffer;
 var callback = require('./callback');
 
-function ensureBucket(s3, bucket) {
-  return new Promise(function (resolve, reject) {
-    s3.headBucket({ Bucket : bucket }, function(err, data) {
-      if (err) {
-        s3.createBucket({ Bucket: bucket, ACL: 'private' }, function(err, data) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
 module.exports = (AWS, bucket, key) => {
 
   var s3 = new AWS.S3({ apiVersion : '2006-03-01' });
@@ -30,6 +12,9 @@ module.exports = (AWS, bucket, key) => {
   var upload = callback(s3.upload, s3);
   var getObject = callback(s3.getObject, s3);
   var putObject = callback(s3.putObject, s3);
+  var headBucket = callback(s3.headBucket, s3);
+  var createBucket = callback(s3.createBucket, s3);
+  var putBucketAcl = callback(s3.putBucketAcl, s3);
 
   function existsObject(key) {
     return new Promise((resolve, reject) => {
@@ -112,7 +97,13 @@ module.exports = (AWS, bucket, key) => {
     return putObject({ Bucket: bucket, Key: encryptString('refs/' + ref), Body: encryptString(to) });
   }
 
-  return ensureBucket(s3, bucket).then(() => {
-    return { saveRaw, loadRaw, exists, readRef, updateRef };
-  });
+  function configureBucket() {
+    return headBucket({ Bucket : bucket })
+      .then(
+        () => putBucketAcl({ Bucket: bucket, ACL: 'private' }),
+        () => createBucket({ Bucket: bucket, ACL: 'private' })
+      );
+  }
+
+  return { saveRaw, loadRaw, exists, readRef, updateRef, configureBucket };
 };

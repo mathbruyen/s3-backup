@@ -36,7 +36,8 @@ async function push(conf) {
   AWS.config.update({ accessKeyId: conf.access_key_id, secretAccessKey : conf.secret_access_key });
 
   var fsrepo = fsdb(conf.cache);
-  var s3repo = await s3db(AWS, conf.bucket, conf.key);
+  var s3repo = s3db(AWS, conf.bucket, conf.key);
+  await s3repo.configureBucket();
   var repo = cachedb(fsrepo, s3repo, ['tree', 'commit']);
 
   var statFile = queue(async (file, name) => {
