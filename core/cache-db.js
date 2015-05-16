@@ -67,10 +67,7 @@ module.exports = (cache, central, types) => {
           if (buffer) {
             return buffer;
           } else {
-            return central.loadRaw(hash)
-              .then(raw => {
-                cache.saveRaw(hash, raw).then(() => raw);
-              });
+            return central.loadRaw(hash).then(raw => cache.saveRaw(hash, raw).then(() => raw));
           }
         });
     } else {
