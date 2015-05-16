@@ -15,6 +15,7 @@ module.exports = (AWS, bucket, key) => {
   var headBucket = callback(s3.headBucket, s3);
   var createBucket = callback(s3.createBucket, s3);
   var putBucketAcl = callback(s3.putBucketAcl, s3);
+  var putBucketCors = callback(s3.putBucketCors, s3);
 
   function existsObject(key) {
     return new Promise((resolve, reject) => {
@@ -102,7 +103,17 @@ module.exports = (AWS, bucket, key) => {
       .then(
         () => putBucketAcl({ Bucket: bucket, ACL: 'private' }),
         () => createBucket({ Bucket: bucket, ACL: 'private' })
-      );
+      )
+      .then(() => putBucketCors({
+        Bucket: bucket,
+        CORSConfiguration: {
+          CORSRules: [{
+            AllowedMethods: ['GET', 'HEAD'],
+            AllowedOrigins: ['*'],
+            AllowedHeaders: ['*']
+          }]
+        }
+      }));
   }
 
   return { saveRaw, loadRaw, exists, readRef, updateRef, configureBucket };
