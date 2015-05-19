@@ -2,7 +2,7 @@
 
 var React = require('react');
 
-var CommitBox = require('./commit-box');
+var TreeBox = require('./tree-box');
 
 module.exports = React.createClass({
 
@@ -16,13 +16,13 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.getCommit();
+    return this.props.objects.getObject('commit', this.props.commit);
   },
 
   render : function () {
     if (this.state.loading) {
       return React.DOM.div(null, 'Loading...');
     }
-    return React.createElement(CommitBox, { objects : this.props.objects, commit : this.state.hash });
+    return React.createElement(TreeBox, { objects : this.props.objects, tree : this.state.body.tree });
   }
 });

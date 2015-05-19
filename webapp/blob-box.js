@@ -2,8 +2,6 @@
 
 var React = require('react');
 
-var CommitBox = require('./commit-box');
-
 module.exports = React.createClass({
 
   getInitialState : function () {
@@ -16,13 +14,13 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.getCommit();
+    return { hash : this.props.blob };// this.props.objects.getObject('blob', this.props.blob);
   },
 
   render : function () {
     if (this.state.loading) {
       return React.DOM.div(null, 'Loading...');
     }
-    return React.createElement(CommitBox, { objects : this.props.objects, commit : this.state.hash });
+    return React.DOM.div(null, this.state.hash);
   }
 });

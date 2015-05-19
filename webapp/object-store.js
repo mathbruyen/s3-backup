@@ -58,6 +58,22 @@ module.exports = (dispatcher, storage) => {
     return commit;
   }
 
+  var objects = {};
+  function getObject(type, hash) {
+    if (!store) {
+      return { loading : true };
+    }
+    if (!objects[hash]) {
+      store.loadAs(type, hash)
+        .then(
+          body => dispatcher.dispatch({ action : 'OBJECT_READ', type, hash, body }),
+          error => console.error(error)
+        );
+      objects[hash] = { loading : true };
+    }
+    return objects[hash];
+  }
+
   var onChange = newStore(dispatcher, {
     KEY_ID_CHANGED : (action) => {
       config.id = action.id;
@@ -85,6 +101,9 @@ module.exports = (dispatcher, storage) => {
     },
     CURRENT_COMMIT_CHANGED : (action) => {
       commit = { hash : action.hash, loading : false };
+    },
+    OBJECT_READ : (action) => {
+      objects[action.hash] = { type : action.type, body : action.body , loading : false };
     }
   });
 
@@ -92,5 +111,5 @@ module.exports = (dispatcher, storage) => {
     return config;
   }
 
-  return { onChange, getConfig, getCommit };
+  return { onChange, getConfig, getCommit, getObject };
 };
