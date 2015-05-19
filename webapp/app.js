@@ -12,5 +12,5 @@ var ContentBox = require('./content-box');
 React.render(React.DOM.div(
   null,
   React.createElement(ConfigBox, { dispatch : dispatcher.dispatch, objects }),
-  React.createElement(ContentBox, { dispatch : dispatcher.dispatch, objects })
+  React.createElement(ContentBox, { objects })
 ), document.body);
