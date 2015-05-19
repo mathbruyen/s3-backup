@@ -31,7 +31,11 @@ module.exports = (dispatcher, storage) => {
   var store, commit;
   function updateStore() {
     commit = undefined;
-    store = cachedb(storagedb(storage), s3db(AWS, config.bucket, config.key), ['tree', 'commit']);
+    if (config.bucket && config.key) {
+      store = cachedb(storagedb(storage), s3db(AWS, config.bucket, config.key), ['tree', 'commit']);
+    } else {
+      store = undefined;
+    }
   }
   updateStore();
 
@@ -40,13 +44,16 @@ module.exports = (dispatcher, storage) => {
   }
 
   function getCommit() {
+    if (!store) {
+      return { loading : true };
+    }
     if (!commit) {
       store.readRef(config.ref)
         .then(
           hash => dispatcher.dispatch({ action : 'CURRENT_COMMIT_CHANGED', hash }),
           error => console.error(error)
         );
-      commit = { loading : true };
+      commit = { loading : true };
     }
     return commit;
   }
