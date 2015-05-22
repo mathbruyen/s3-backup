@@ -14,17 +14,12 @@ module.exports = (dispatcher, actions) => {
     }
   });
 
-  function onChange(subscriber, scope) {
-    var s = subscriber.bind(scope);
-    s.subscriber = subscriber;
-    s.scope = scope;
-    subscribers.push(s);
+  function onChange(subscriber) {
+    subscribers.push(subscriber);
   }
 
-  function offChange(subscriber, scope) {
-    subscribers = subscribers.filter(s => {
-      return s.subscriber !== subscriber || s.scope !== scope;
-    });
+  function offChange(subscriber) {
+    subscribers = subscribers.filter(s => s !== subscriber);
   }
 
   return { onChange, offChange };

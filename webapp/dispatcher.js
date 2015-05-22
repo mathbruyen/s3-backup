@@ -10,8 +10,8 @@ module.exports = () => {
     }
   }
 
-  function subscribe(subscriber, scope) {
-    subscribers.push(subscriber.bind(scope));
+  function subscribe(subscriber) {
+    subscribers.push(subscriber);
   }
 
   return { dispatch, subscribe };

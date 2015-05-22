@@ -11,11 +11,11 @@ module.exports = React.createClass({
   },
 
   componentDidMount: function() {
-    this.props.objects.onChange(this._onChange, this);
+    this.props.objects.onChange(this._onChange);
   },
 
   componentWillUnmount: function() {
-    this.props.objects.offChange(this._onChange, this);
+    this.props.objects.offChange(this._onChange);
   },
 
   _onChange : function (counter) {
