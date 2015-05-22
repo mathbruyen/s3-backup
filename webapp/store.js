@@ -27,5 +27,5 @@ module.exports = (dispatcher, actions) => {
     });
   }
 
-  return onChange;
+  return { onChange, offChange };
 };

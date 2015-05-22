@@ -7,8 +7,15 @@ var TreeBox = require('./tree-box');
 module.exports = React.createClass({
 
   getInitialState : function () {
-    this.props.objects.onChange(this._onChange, this);
     return this._getState();
+  },
+
+  componentDidMount: function() {
+    this.props.objects.onChange(this._onChange, this);
+  },
+
+  componentWillUnmount: function() {
+    this.props.objects.offChange(this._onChange, this);
   },
 
   _onChange : function (counter) {

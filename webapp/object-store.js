@@ -74,7 +74,7 @@ module.exports = (dispatcher, storage) => {
     return objects[hash];
   }
 
-  var onChange = newStore(dispatcher, {
+  var { onChange, offChange } = newStore(dispatcher, {
     KEY_ID_CHANGED : (action) => {
       config.id = action.id;
       updateAws();
@@ -111,5 +111,5 @@ module.exports = (dispatcher, storage) => {
     return config;
   }
 
-  return { onChange, getConfig, getCommit, getObject };
+  return { onChange, offChange, getConfig, getCommit, getObject };
 };
