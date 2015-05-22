@@ -8,7 +8,7 @@
     "pages": "npm run clean-pages && npm run copy-statics && npm run build-pages",
     "clean-pages": "find _gh-pages/ ! -path '_gh-pages/.git*' -type f -exec rm -f {} +",
     "copy-statics": "cp -R webapp/static/* _gh-pages",
-    "build-pages": "browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
+    "build-pages": "AWS_SERVICES=s3-2006-03-01 browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _gh-pages/app.js",
     "serve-pages": "http-server -p 8080 _gh-pages",
     "deploy-pages": "cd _gh-pages && git add --all && git commit -m \"Update site\" && git push",
     "setup-pages": "git clone --depth 1 -b gh-pages $(git config --get remote.origin.url) _gh-pages"
