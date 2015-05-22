@@ -1,16 +1,31 @@
 /* jshint node: true, esnext: true */
 
-var Rx = require('rx');
-
 module.exports = (dispatcher, actions) => {
-  var changes = new Rx.Subject();
 
-  var obs = dispatcher.feed
-      .filter(x => actions[x.action])
-      .subscribeOnNext(x => {
-        actions[x.action](x, dispatcher.dispatch);
-        changes.onNext();
-      });
+  var subscribers = [];
 
-  return changes.subscribeOnNext.bind(changes);
+  dispatcher.subscribe(x => {
+    var handler = actions[x.action];
+    if (handler) {
+      handler(x);
+      for (var subscriber of subscribers) {
+        subscriber();
+      }
+    }
+  });
+
+  function onChange(subscriber, scope) {
+    var s = subscriber.bind(scope);
+    s.subscriber = subscriber;
+    s.scope = scope;
+    subscribers.push(s);
+  }
+
+  function offChange(subscriber, scope) {
+    subscribers = subscribers.filter(s => {
+      return s.subscriber !== subscriber || s.scope !== scope;
+    });
+  }
+
+  return onChange;
 };
