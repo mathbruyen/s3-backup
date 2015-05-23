@@ -30,6 +30,11 @@ module.exports = React.createClass({
     if (this.state.loading) {
       return React.DOM.div(null, 'Loading...');
     }
-    return React.createElement(CommitBox, { objects : this.props.objects, commit : this.state.hash });
+    return React.createElement(CommitBox, {
+      objects : this.props.objects,
+      display : this.props.display,
+      dispatch : this.props.dispatch,
+      commit : this.state.hash
+    });
   }
 });

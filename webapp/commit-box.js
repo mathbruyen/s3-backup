@@ -30,6 +30,12 @@ module.exports = React.createClass({
     if (this.state.loading) {
       return React.DOM.div(null, 'Loading...');
     }
-    return React.createElement(TreeBox, { objects : this.props.objects, tree : this.state.body.tree });
+    return React.createElement(TreeBox, {
+      objects : this.props.objects,
+      display : this.props.display,
+      dispatch : this.props.dispatch,
+      tree : this.state.body.tree,
+      path : ''
+    });
   }
 });
