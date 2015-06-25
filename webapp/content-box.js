@@ -13,13 +13,12 @@ module.exports = React.createClass({
 
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
-    if (!this.state.commit) {
-      this.props.objectActions.requestReference(this.props.objects.getStore(), this.props.objects.getConfig().ref);
-    }
+    this.props.config.onChange(this._onChange);
   },
 
   componentWillUnmount: function() {
     this.props.objects.offChange(this._onChange);
+    this.props.config.offChange(this._onChange);
   },
 
   _onChange : function (counter) {
@@ -27,7 +26,15 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return { commit : this.props.objects.getCommit() };
+    var ref = this.props.config.getReference();
+    var commit;
+    if (ref) {
+      commit = this.props.objects.getRef(ref);
+      if (!commit) {
+        this.props.objectActions.requestReference(this.props.config.getStore(), ref);
+      }
+    }
+    return { commit };
   },
 
   render : function () {
@@ -36,6 +43,7 @@ module.exports = React.createClass({
     }
     return React.createElement(CommitBox, {
       objects : this.props.objects,
+      config : this.props.config,
       objectActions : this.props.objectActions,
       display : this.props.display,
       dispatch : this.props.dispatch,

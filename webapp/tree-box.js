@@ -15,9 +15,6 @@ var TreeBox = React.createClass({
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
     this.props.display.onChange(this._onChange);
-    if (!this.state.tree) {
-      this.props.objectActions.requestObject(this.props.objects.getStore(), 'tree', this.props.tree);
-    }
   },
 
   componentWillUnmount: function() {
@@ -26,14 +23,16 @@ var TreeBox = React.createClass({
   },
 
   _onChange : function (counter) {
+    // TODO triggers a warning when hiding a tree because replaceState is called even though component is unmounted
     this.replaceState(this._getState());
   },
 
   _getState : function () {
-    return {
-      tree : this.props.objects.getObject(this.props.tree),
-      details : this.props.display.getDisplayedChildren(this.props.path)
-    };
+    var tree = this.props.objects.getObject(this.props.tree);
+    if (!tree) {
+      this.props.objectActions.requestObject(this.props.config.getStore(), 'tree', this.props.tree);
+    }
+    return { tree, details : this.props.display.getDisplayedChildren(this.props.path) };
   },
 
   render : function () {
@@ -45,9 +44,17 @@ var TreeBox = React.createClass({
       if (this.state.details.indexOf(child) >= 0) {
         var elem;
         if (item.mode === modes.file) {
-          elem = React.createElement(BlobBox, { objects : this.props.objects, blob : item.hash });
+          elem = React.createElement(BlobBox, { blob : item.hash });
         } else if (item.mode === modes.tree) {
-          elem = React.createElement(TreeBox, { objects : this.props.objects, objectActions : this.props.objectActions, display : this.props.display, dispatch : this.props.dispatch, tree : item.hash, path : this.props.path + '/' + child });
+          elem = React.createElement(TreeBox, {
+            objects : this.props.objects,
+            config : this.props.config,
+            objectActions : this.props.objectActions,
+            display : this.props.display,
+            dispatch : this.props.dispatch,
+            tree : item.hash,
+            path : this.props.path + '/' + child
+          });
         } else {
           throw new Error('Invalid mode: ' + item.mode);
         }

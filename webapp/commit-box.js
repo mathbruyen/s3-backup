@@ -13,9 +13,6 @@ module.exports = React.createClass({
 
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
-    if (!this.state.commit) {
-      this.props.objectActions.requestObject(this.props.objects.getStore(), 'commit', this.props.commit);
-    }
   },
 
   componentWillUnmount: function() {
@@ -27,7 +24,11 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return { commit : this.props.objects.getObject(this.props.commit) };
+    var commit = this.props.objects.getObject(this.props.commit);
+    if (!commit) {
+      this.props.objectActions.requestObject(this.props.config.getStore(), 'commit', this.props.commit);
+    }
+    return { commit };
   },
 
   render : function () {
@@ -36,6 +37,7 @@ module.exports = React.createClass({
     }
     return React.createElement(TreeBox, {
       objects : this.props.objects,
+      config : this.props.config,
       objectActions : this.props.objectActions,
       display : this.props.display,
       dispatch : this.props.dispatch,

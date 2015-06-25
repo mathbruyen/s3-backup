@@ -10,11 +10,11 @@ module.exports = React.createClass({
   },
 
   componentDidMount: function() {
-    this.props.objects.onChange(this._onChange);
+    this.props.config.onChange(this._onChange);
   },
 
   componentWillUnmount: function() {
-    this.props.objects.offChange(this._onChange);
+    this.props.config.offChange(this._onChange);
   },
 
   _onChange : function (counter) {
@@ -22,7 +22,7 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.getConfig();
+    return this.props.config.getConfig();
   },
 
   render : function () {
