@@ -1,4 +1,5 @@
 /* jshint node: true, esnext: true */
+'use strict';
 
 var React = require('react');
 var modes = require('js-git/lib/modes');
@@ -48,7 +49,7 @@ var TreeBox = React.createClass({
         } else if (item.mode === modes.tree) {
           elem = React.createElement(TreeBox, { objects : this.props.objects, objectActions : this.props.objectActions, display : this.props.display, dispatch : this.props.dispatch, tree : item.hash, path : this.props.path + '/' + child });
         } else {
-          throw new Exception('Invalid mode: ' + item.mode);
+          throw new Error('Invalid mode: ' + item.mode);
         }
         return React.DOM.li({ key : child }, React.DOM.span({ onClick : this._hideChildren.bind(this, child) }, '- ' + child), elem);
       } else {

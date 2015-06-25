@@ -1,4 +1,5 @@
 /* jshint node: true, esnext: true */
+'use strict';
 
 var newStore = require('./store');
 
