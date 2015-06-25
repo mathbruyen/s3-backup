@@ -1,15 +1,15 @@
 /* jshint node: true, esnext: true */
 
-module.exports = (dispatcher, actions) => {
+module.exports = (dispatcherSubscribe, actions) => {
 
   var subscribers = [];
 
-  dispatcher.subscribe(x => {
+  dispatcherSubscribe(x => {
     var handler = actions[x.action];
     if (handler) {
       handler(x);
       for (var subscriber of subscribers) {
-        subscriber();
+        process.nextTick(subscriber);
       }
     }
   });

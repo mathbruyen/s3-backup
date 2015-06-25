@@ -14,6 +14,9 @@ var TreeBox = React.createClass({
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
     this.props.display.onChange(this._onChange);
+    if (!this.state.tree) {
+      this.props.objectActions.requestObject(this.props.objects.getStore(), 'tree', this.props.tree);
+    }
   },
 
   componentWillUnmount: function() {
@@ -27,13 +30,13 @@ var TreeBox = React.createClass({
 
   _getState : function () {
     return {
-      tree : this.props.objects.getObject('tree', this.props.tree),
+      tree : this.props.objects.getObject(this.props.tree),
       details : this.props.display.getDisplayedChildren(this.props.path)
     };
   },
 
   render : function () {
-    if (this.state.tree.loading) {
+    if (!this.state.tree || this.state.tree.loading) {
       return React.DOM.div(null, 'Loading...');
     }
     return React.DOM.ul(null, Object.keys(this.state.tree.body).map(child => {
@@ -43,7 +46,7 @@ var TreeBox = React.createClass({
         if (item.mode === modes.file) {
           elem = React.createElement(BlobBox, { objects : this.props.objects, blob : item.hash });
         } else if (item.mode === modes.tree) {
-          elem = React.createElement(TreeBox, { objects : this.props.objects, display : this.props.display, dispatch : this.props.dispatch, tree : item.hash, path : this.props.path + '/' + file });
+          elem = React.createElement(TreeBox, { objects : this.props.objects, objectActions : this.props.objectActions, display : this.props.display, dispatch : this.props.dispatch, tree : item.hash, path : this.props.path + '/' + child });
         } else {
           throw new Exception('Invalid mode: ' + item.mode);
         }

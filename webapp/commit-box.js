@@ -12,6 +12,9 @@ module.exports = React.createClass({
 
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
+    if (!this.state.commit) {
+      this.props.objectActions.requestObject(this.props.objects.getStore(), 'commit', this.props.commit);
+    }
   },
 
   componentWillUnmount: function() {
@@ -23,18 +26,19 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.getObject('commit', this.props.commit);
+    return { commit : this.props.objects.getObject(this.props.commit) };
   },
 
   render : function () {
-    if (this.state.loading) {
+    if (!this.state.commit || this.state.commit.loading) {
       return React.DOM.div(null, 'Loading...');
     }
     return React.createElement(TreeBox, {
       objects : this.props.objects,
+      objectActions : this.props.objectActions,
       display : this.props.display,
       dispatch : this.props.dispatch,
-      tree : this.state.body.tree,
+      tree : this.state.commit.body.tree,
       path : ''
     });
   }

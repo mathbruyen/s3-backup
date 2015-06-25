@@ -9,7 +9,7 @@ var storagedb = require('../core/storage-db');
 var cachedb = require('../core/cache-db');
 var newStore = require('./store');
 
-module.exports = (dispatcher, storage) => {
+module.exports = (dispatcherSubscribe, storage) => {
 
   function readConfig() {
     var str = storage.getItem('config');
@@ -22,6 +22,9 @@ module.exports = (dispatcher, storage) => {
 
   // TODO use immutable data structure
   var config = readConfig();
+  function getConfig() {
+    return config;
+  }
 
   function updateAws() {
     AWS.config.update({ accessKeyId: config.id, secretAccessKey : config.secret });
@@ -37,44 +40,24 @@ module.exports = (dispatcher, storage) => {
       store = undefined;
     }
   }
+  function getStore() {
+    return store;
+  }
+  function getCommit() {
+    return commit;
+  }
   updateStore();
 
   function writeConfig() {
     storage.setItem('config', JSON.stringify(config));
   }
 
-  function getCommit() {
-    if (!store) {
-      return { loading : true };
-    }
-    if (!commit) {
-      store.readRef(config.ref)
-        .then(
-          hash => dispatcher.dispatch({ action : 'CURRENT_COMMIT_CHANGED', hash }),
-          error => console.error(error)
-        );
-      commit = { loading : true };
-    }
-    return commit;
-  }
-
   var objects = {};
-  function getObject(type, hash) {
-    if (!store) {
-      return { loading : true };
-    }
-    if (!objects[hash]) {
-      store.loadAs(type, hash)
-        .then(
-          body => dispatcher.dispatch({ action : 'OBJECT_READ', type, hash, body }),
-          error => console.error(error)
-        );
-      objects[hash] = { loading : true };
-    }
+  function getObject(hash) {
     return objects[hash];
   }
 
-  var { onChange, offChange } = newStore(dispatcher, {
+  var { onChange, offChange } = newStore(dispatcherSubscribe, {
     KEY_ID_CHANGED : (action) => {
       config.id = action.id;
       updateAws();
@@ -99,17 +82,23 @@ module.exports = (dispatcher, storage) => {
       config.ref = action.ref;
       writeConfig();
     },
-    CURRENT_COMMIT_CHANGED : (action) => {
-      commit = { hash : action.hash, loading : false };
+    OBJECT_LOAD_REQUESTED : (action) => {
+      objects[action.hash] = { loading : true };
     },
-    OBJECT_READ : (action) => {
+    OBJECT_LOADED : (action) => {
       objects[action.hash] = { type : action.type, body : action.body , loading : false };
+    },
+    REFERENCE_LOAD_REQUESTED : (action) => {
+      if (config.ref === action.ref) {
+        commit = { loading : true };
+      }
+    },
+    REFERENCE_LOADED : (action) => {
+      if (config.ref === action.ref) {
+        commit = { loading : false, hash : action.commitHash };
+      }
     }
   });
 
-  function getConfig() {
-    return config;
-  }
-
-  return { onChange, offChange, getConfig, getCommit, getObject };
+  return { onChange, offChange, getConfig, getCommit, getObject, getStore };
 };

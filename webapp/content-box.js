@@ -12,6 +12,9 @@ module.exports = React.createClass({
 
   componentDidMount: function() {
     this.props.objects.onChange(this._onChange);
+    if (!this.state.commit) {
+      this.props.objectActions.requestReference(this.props.objects.getStore(), this.props.objects.getConfig().ref);
+    }
   },
 
   componentWillUnmount: function() {
@@ -23,18 +26,19 @@ module.exports = React.createClass({
   },
 
   _getState : function () {
-    return this.props.objects.getCommit();
+    return { commit : this.props.objects.getCommit() };
   },
 
   render : function () {
-    if (this.state.loading) {
+    if (!this.state.commit || this.state.commit.loading) {
       return React.DOM.div(null, 'Loading...');
     }
     return React.createElement(CommitBox, {
       objects : this.props.objects,
+      objectActions : this.props.objectActions,
       display : this.props.display,
       dispatch : this.props.dispatch,
-      commit : this.state.hash
+      commit : this.state.commit.hash
     });
   }
 });

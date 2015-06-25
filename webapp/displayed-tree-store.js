@@ -2,7 +2,7 @@
 
 var newStore = require('./store');
 
-module.exports = (dispatcher) => {
+module.exports = (dispatcherSubscribe) => {
 
   var displayed = {};
 
@@ -10,7 +10,7 @@ module.exports = (dispatcher) => {
     return displayed[path] || [];
   }
 
-  var { onChange, offChange } = newStore(dispatcher, {
+  var { onChange, offChange } = newStore(dispatcherSubscribe, {
     REFERENCE_CHANGED : () => {
       displayed = {};
     },
