@@ -9,7 +9,7 @@
     "frontend": "npm run clean && npm run copy-statics && npm run build-app",
     "clean": "rm -rfv _webapp",
     "copy-statics": "mkdir _webapp && cp -rv webapp/static/* _webapp",
-    "build-app": "AWS_SERVICES=s3-2006-03-01 browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _webapp/app.js",
+    "build-app": "env AWS_SERVICES=s3-2006-03-01 browserify webapp/app.js -t [ babelify --optional es7.asyncFunctions ] --outfile _webapp/app.js",
 
     "server": "http-server -p 8080 _webapp",
 
